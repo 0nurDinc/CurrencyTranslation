@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Currency Application">
+    <meta name="keywords" content="Currency,App,CurrencyApp">
+    <link rel="shortcut icon" href="exchange.ico" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <title>Currency Translation</title>
+    <style>
+
+        .rotate-icon {
+          animation: rotate 2s linear infinite;
+        }
+    
+        @keyframes rotate {
+          0% {
+            transform: rotate(0deg);
+          }
+          25% {
+            transform: rotate(90deg);
+          }
+          50% {
+            transform: rotate(180deg);
+          }
+          75% {
+            transform: rotate(270deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+
+        .currency-overflow{
+            overflow: auto;
+            max-height: 700px;
+        }
+
+        .currency-overflow::-webkit-scrollbar{
+            width: 3px;
+        }
+
+        .currency-overflow::-webkit-scrollbar-thumb{
+            background-color: gray;
+            border-radius: 6px;
+        }
+
+        .currency-overflow::-webkit-scrollbar-track{
+            background-color: gainsboro;
+        }
+
+        .custom-table-header{
+            position: sticky;
+            top: 0;
+            background-color: gray;
+            color: white;
+        }
+
+      </style>
+</head>
+<body>
+    
+    <div class="container mt-5">
+        <div class="text-center mb-5">
+          <h1>Döviz Çevirici { Çapraz Kur }</h1>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-8 px-5 currency-overflow mb-5">
+
+            <!-- Exchange Rates Table -->
+            <table class="table text-center table-hover">
+              <thead class="custom-table-header">
+                <tr>
+                  <th>Birim</th>
+                  <th>Kod</th>
+                  <th>Isim</th>
+                  <th>Alış</th>
+                  <th>Satış</th>
+                </tr>
+              </thead>
+              <tbody id="currencyTableBody">
+
+              </tbody>
+            </table>
+          </div>
+
+        <!-- Currency Conversion Form -->
+          <div class="col-md-4 px-5">
+            <h2 class="text-center mb-4">Döviz Çevirme Formu</h2>
+            <form>
+              <div class="form-group mt-2">
+                <label for="amount" class="fw-bold">Miktar:</label>
+                <input type="number" class="form-control mt-2" id="amount" placeholder="Miktarı girin" required>
+              </div>
+              <div class="form-group mt-2">
+                <label for="fromCurrency" class="fw-bold">Dönüştürülecek Birim:</label>
+                <select class="form-control mt-2" id="fromCurrency" required>
+                </select>
+              </div>
+              <div class="form-group mt-2">
+                <label for="toCurrency" class="fw-bold">Dönüştürülen Birim:</label>
+                <select class="form-control mt-2" id="toCurrency" required>
+                </select>
+              </div>
+              <button type="button" id="currencyBtn" class="btn btn-outline-primary mt-3 col-12 fw-bold fs-4" onclick="CurrencyTranslationBtn()">
+                <i class="bi bi-arrow-repeat  d-block"></i>
+            </button>
+            <h1 class="h1 text-end mt-3 text-success" id="resultText">...</h1>
+            </form>
+          </div>
+        </div>
+
+      </div>
+
+      <script>
+
+        document.onload = LoadXML();
+
+        function LoadXML(){
+            fetch("currency.xml")
+                .then(response=>response.text())
+                .then(xmlText =>{
+
+                    var parser = new DOMParser();
+                    var xmlDoc = parser.parseFromString(xmlText,"text/xml");
+
+                    const currencyTableBody = document.getElementById("currencyTableBody");
+                    const currencyData = xmlDoc.querySelectorAll("Currency");
+
+                    const fromCurrencySelect = document.getElementById("fromCurrency");
+                    const toCurrencySelect = document.getElementById("toCurrency");
+
+
+                    currencyData.forEach(value=>{
+                        const currenyCode = value.getAttribute("Kod");
+                        const currencyUnit = value.querySelector("Unit").textContent;
+                        const currenyName = value.querySelector("Isim").textContent;
+                        const currencyForexBuying = value.querySelector("ForexBuying").textContent;
+                        const currencyForexSelling = value.querySelector("ForexSelling").textContent;
+                        const currencyBankNoteBuying = value.querySelector("BanknoteBuying").textContent;
+                        const currencyBankNoteSelling = value.querySelector("BanknoteSelling").textContent;
+                        const currencyCrossRateUSD = value.querySelector("CrossRateUSD").textContent;
+                        const currencyCrossRateOther = value.querySelector("CrossRateOther").textContent;
+
+
+                        const row = document.createElement("tr");
+                        row.innerHTML= `<td> ${currencyUnit} </td>
+                                        <td> ${currenyCode} </td>
+                                        <td> ${currenyName} </td>
+                                        <td> ${currencyForexBuying} </td>
+                                        <td> ${currencyForexSelling} </td>`;
+
+                        
+                        currencyTableBody.appendChild(row);            
+
+
+                        const option1 = document.createElement("option");
+                        option1.value= currenyCode;
+                        option1.textContent = currenyName;
+                        option1.setAttribute("data-buying",currencyForexBuying);
+
+                        fromCurrencySelect.appendChild(option1);
+
+                        
+                        const option2 = document.createElement("option");
+                        option2.value= currenyCode;
+                        option2.textContent = currenyName;
+                        option2.setAttribute("data-buying",currencyForexBuying);
+
+                        toCurrencySelect.appendChild(option2);
+
+                    });
+                })
+                .catch(error=>console.error("Xml Belgesi Yüklenirken Hata Oluştu: ",error));
+        }
+
+
+        function CurrencyTranslationBtn(){
+            
+            const button = document.getElementById("currencyBtn");
+            const amountText = document.getElementById("amount")
+            const unitToCovert = document.getElementById("fromCurrency");
+            const convertedUnit = document.getElementById("toCurrency");
+
+            let unitToConverDataAttribute = unitToCovert.getAttribute("data-buying");
+            let convertedUnitDataAttribute = convertedUnit.getAttribute("data-buying");
+
+            let selectindex = unitToCovert.selectedIndex;
+            let selectindex1 = convertedUnit.selectedIndex;
+          
+            
+            if(isNaN(unitToConverDataAttribute) || isNaN(convertedUnitDataAttribute)){
+                console.error("Döviz Kuraları Bulunmadı");
+                return;
+            }
+
+            let unitToConvertToValue = unitToCovert.options[selectindex].getAttribute("data-buying");
+            let convertedUnitValue = convertedUnit.options[selectindex1].getAttribute("data-buying");
+
+            let convertedAmount = (amountText.value / unitToConvertToValue)* convertedUnitValue;
+       
+            button.children.item(0).classList.toggle("rotate-icon");
+            const timeOut = setTimeout(y=>{
+                    document.getElementById("resultText").innerHTML = convertedAmount.toFixed(2);
+                    button.children.item(0).classList.toggle("rotate-icon");
+                    clearTimeout(x);
+                },1000);
+
+        }
+
+      </script>
+
+ 
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
+</body>
+</html>
